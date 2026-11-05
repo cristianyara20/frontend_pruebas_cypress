@@ -62,4 +62,32 @@ describe("Pruebas de Caja Negra - Login (UI)", () => {
     cy.contains('Correo o contraseña incorrectos').should('be.visible');
     cy.url().should('include', '/login');
   });
+  it('CP-LOGIN-06: El enlace "Regístrate aquí" lleva a /register', () => {
+    cy.intercept("GET", `${API}/role`, { body: { body: [] } });
+    cy.intercept("GET", `${API}/userStatus`, { body: { body: [] } });
+    cy.contains("Regístrate aquí").click();
+    cy.url().should("include", "/register");
+  });
+
+  it("CP-LOGIN-07: Con campos vacíos no debe permitir el acceso", () => {
+    cy.intercept("POST", `${API}/user/login`, {
+      statusCode: 400,
+      body: { message: "Bad request" },
+    }).as("loginVacio");
+    cy.contains("button", "Ingresar").click();
+    cy.wait("@loginVacio");
+    cy.contains("Correo o contraseña incorrectos").should("be.visible");
+    cy.url().should("include", "/login");
+  });
+  it('CP-LOGIN-08: El botón muestra "Ingresando..." y se deshabilita mientras carga', () => {
+    cy.intercept("POST", `${API}/user/login`, {
+      statusCode: 401,
+      body: {},
+      delay: 1000,
+    });
+    cy.get('input[type="email"]').type("admin@correo.com");
+    cy.get('input[type="password"]').type("1234567");
+    cy.contains("button", "Ingresar").click();
+    cy.contains("button", "Ingresando...").should("be.disabled");
+  });
 });
